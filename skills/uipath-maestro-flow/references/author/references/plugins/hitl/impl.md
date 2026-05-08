@@ -31,23 +31,28 @@ For add, delete, and wiring procedures, see [editing-operations.md](../../editin
     "type": "quick",
     "schema": {
       "fields": [
-        { "id": "invoiceId", "label": "Invoice ID", "type": "text",   "direction": "input" },
-        { "id": "amount",    "label": "Amount",     "type": "number", "direction": "input" }
+        { "id": "invoiceid", "label": "Invoice ID", "type": "text",   "direction": "input", "binding": "=js:$vars.fetchInvoice.output.invoiceId", "variable": "=js:$vars.fetchInvoice.output.invoiceId" },
+        { "id": "amount",    "label": "Amount",     "type": "number", "direction": "input", "binding": "=js:$vars.fetchInvoice.output.amount",    "variable": "=js:$vars.fetchInvoice.output.amount" }
       ],
       "outcomes": [
-        { "id": "approve", "name": "Approve", "type": "string", "isPrimary": true,  "outcomeType": "Positive", "action": "Continue" },
-        { "id": "reject",  "name": "Reject",  "type": "string", "isPrimary": false, "outcomeType": "Negative", "action": "End" }
+        { "id": "approve", "name": "Approve", "type": "string", "isPrimary": true,  "outcomeType": "Positive" },
+        { "id": "reject",  "name": "Reject",  "type": "string", "isPrimary": false, "outcomeType": "Negative" }
       ]
     },
     "recipient": { "channels": ["Email", "ActionCenter"], "connections": {}, "assignee": { "type": "group" } },
     "priority": "Low"
   },
   "outputs": {
-    "output": { "type": "object", "description": "Task result data", "source": "=result", "var": "output" },
-    "status": { "type": "string", "description": "Task completion status", "source": "=result.Action", "var": "status" }
+    "output": { "type": "object", "source": "=result",        "var": "output" },
+    "status": { "type": "string", "source": "=result.Action", "var": "status" },
+    "<variable>": { "type": "string", "source": "=result.<fieldId>", "var": "<variable>", "custom": true }
   }
 }
 ```
+
+`custom: true` on per-field outputs marks them as workflow-global variables (accessible as `$vars.<variable>`, not prefixed by nodeId). Add one entry per `output` / `inOut` direction field. Omit the `<variable>` entry when the schema has no `output` or `inOut` fields.
+
+**Input fields require both `binding` and `variable`** — `binding` stores the expression for the workbench display; `variable` is what the BPMN engine evaluates to pre-populate the form at task-creation time (`HitlTaskArguments`). Without `variable`, input fields appear blank in Action Center and inline debug. Both must point to the same `=js:$vars.…` expression.
 
 BPMN type (`bpmn:UserTask`) and serviceType (`Actions.HITL`) come from the `uipath.human-in-the-loop` entry in `definitions[]` — the instance carries no `model` block.
 
@@ -56,7 +61,8 @@ BPMN type (`bpmn:UserTask`) and serviceType (`Actions.HITL`) come from the `uipa
 **Output variables:**
 - `$vars.{nodeId}.output` — object with all `output` / `inOut` fields the human filled in
 - `$vars.{nodeId}.output.{fieldName}` — individual field value
-- `$vars.{nodeId}.status` — selected outcome's action value (`"Continue"` or `"End"`)
+- `$vars.{nodeId}.status` — selected outcome id (e.g. `"approve"`, `"reject"`)
+- `$vars.{variable}` — per-field workflow-global variable (`custom: true`); one per `output` / `inOut` field
 
 ---
 
@@ -120,13 +126,11 @@ The instance carries only per-instance data (`inputs`, `outputs`, `display`). BP
   "outputs": {
     "output": {
       "type": "object",
-      "description": "Form data submitted by the user",
       "source": "=result.response",
       "var": "output"
     },
     "error": {
       "type": "object",
-      "description": "Error information if the human task fails",
       "source": "=result.Error",
       "var": "error"
     }
