@@ -58,6 +58,10 @@ Determine the agent mode before proceeding:
 | Embed coded agent in a flow (solution-level) | Coded | [coded/embedding-in-flows.md](references/coded/embedding-in-flows.md) | |
 | Use coded agent in a flow | Coded | [coded/flow-integration.md](references/coded/flow-integration.md) | |
 | Use coded agent as tool for another agent in flow | Coded | [coded/flow-integration.md](references/coded/flow-integration.md) § Pattern 3 | |
+| Summarize / research / synthesize over PDF or TXT (DeepRAG, coded) | Coded | [context-grounding-patterns.md](references/context-grounding-patterns.md) | [coded/capabilities/deeprag/planning.md](references/coded/capabilities/deeprag/planning.md) |
+| Summarize / research / synthesize over PDF or TXT (DeepRAG, low-code) | Low-code | [context-grounding-patterns.md](references/context-grounding-patterns.md) | [lowcode/capabilities/built-in-tools/deeprag/planning.md](references/lowcode/capabilities/built-in-tools/deeprag/planning.md) |
+| Process CSV rows with LLM per row (BatchTransform, coded) | Coded | [context-grounding-patterns.md](references/context-grounding-patterns.md) | [coded/capabilities/batch-transform/planning.md](references/coded/capabilities/batch-transform/planning.md) |
+| Process CSV rows with LLM per row (BatchTransform, low-code) | Low-code | [context-grounding-patterns.md](references/context-grounding-patterns.md) | [lowcode/capabilities/built-in-tools/batch-transform/planning.md](references/lowcode/capabilities/built-in-tools/batch-transform/planning.md) |
 
 ## Resources
 
