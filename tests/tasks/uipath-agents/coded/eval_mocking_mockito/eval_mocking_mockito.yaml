@@ -10,14 +10,6 @@ description: >
   pipeline runs offline.
 tags: [uipath-agents, e2e, coded, mode:build, feature:eval, feature:eval-mocking, feature:framework-simple]
 max_iterations: 1
-task_timeout: 1800
-
-agent:
-  type: claude-code
-  permission_mode: acceptEdits
-  allowed_tools: ["Skill", "Bash", "Read", "Write", "Edit", "Glob", "Grep"]
-  max_turns: 80
-  turn_timeout: 1800
 
 initial_prompt: |
   Recreate the coded agent project under `asset-retriever/`
@@ -130,3 +122,8 @@ success_criteria:
     expected_exit_code: 0
     weight: 5.0
     pass_threshold: 1.0
+
+run_limits:
+  max_turns: 80
+  turn_timeout: 1800
+  task_timeout: 1800
