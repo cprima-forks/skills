@@ -2,7 +2,7 @@
 
 Manage Orchestrator resources -- assets, queues, queue items, buckets, files, triggers, libraries, and webhooks.
 
-> **Important:** These commands live under `uip or` (the former standalone `uip resource` tool was retired and folded into `uip or`). The old `storage-buckets`/`storage-bucket-files` names are now `buckets`/`bucket-files`.
+> **Important:** These commands live under `uip or` (the former standalone resource tool was retired and folded into `uip or`). The old `storage-buckets`/`storage-bucket-files` names are now `buckets`/`bucket-files`.
 
 > For full option details on any command, use `--help` (e.g., `uip or assets list --help`).
 
@@ -60,9 +60,9 @@ Libraries are tenant-scoped -- no folder context needed.
 | `uip or libraries list` | List libraries in the tenant feed. Options: `--limit <N>` (default 50), `--offset <N>`, `--sort-by "<field> <asc\|desc>"`. No native search — filter client-side via global `--output-filter "<JMESPath>"`. Returns `Key`, `Title`, `Version`, `Authors`. |
 | `uip or libraries get <key>` | Get library details. Key format is `PackageId:Version` (e.g., `MyLib:1.0.0`). Returns the full API DTO. |
 | `uip or libraries versions <package-id>` | List all versions of a library by package ID (the `Title` from `list` output). |
-| `uip or libraries upload --file <path>` | Upload a `.nupkg` library package to the tenant feed. |
-| `uip or libraries download <key> --destination <path>` | Download a `.nupkg` to local disk. |
-| `uip or libraries delete <key>` | Delete a specific library version. |
+| `uip or libraries upload --file <path>` | Upload a `.nupkg` library package to the tenant feed. The file must exist (checked client-side). The default shared feed is read-only on many tenants — if upload fails with a read-only/feed-not-found error, enable Tenant Libraries in tenant settings or target a writable feed with `--feed-id` (`uip or feeds list`). |
+| `uip or libraries download <key> --destination <path>` | Download a `.nupkg` to local disk. `--destination` creates missing parent dirs and overwrites an existing file. |
+| `uip or libraries delete <key>` | Delete a specific library version. Key format is `PackageId:Version` (validated client-side). |
 
 ```bash
 # List libraries (first 500). Default --limit is 50; bump it for tenants with many libraries.
@@ -87,14 +87,14 @@ uip or libraries download "UiPath.System.Activities:24.10.0" \
   --destination ./system-activities.nupkg --output json
 
 # Delete an old version
-uip or libraries delete "UiPath.System.Activities:24.4.0" --output json
+uip or libraries delete "UiPath.System.Activities:24.4.0" --yes --output json
 ```
 
 ---
 
 ## Output Behavior
 
-Resource tool commands return **full API responses** (all fields) by default. There is no `--all-fields` flag — the convention in `resource-tool` is raw camelCase DTO. (This differs from `orchestrator-tool`, which curates by default and exposes `--all-fields` for the raw view; see [`uipath-orchestrator`](../orchestrator/orchestrator.md).)
+These commands return **full API responses** (all fields) by default. There is no `--all-fields` flag — they emit the raw camelCase DTO. (This is a transitional exception: the native Orchestrator commands curate by default and expose `--all-fields` for the raw view; see [orchestrator.md](orchestrator.md).)
 
 List responses include a `Pagination` block:
 
@@ -111,6 +111,6 @@ When `HasMore` is `true`, increment `--offset` by `--limit` and fetch again. Con
 
 ## Related
 
-- **Orchestrator** (`uip or`) — folders, jobs, processes, packages, users, machines → [`uipath-orchestrator`](../orchestrator/orchestrator.md)
+- **Orchestrator** (`uip or`) — folders, jobs, processes, packages, users, machines → [orchestrator.md](orchestrator.md)
 - **Solutions** (`uip solution`) — pack, publish, deploy solution packages → [`uipath-solution`](/uipath:uipath-solution)
-- **Folder/user setup** — required before folder-scoped resources can be used → [`uipath-orchestrator/setup-environment`](../orchestrator/setup-environment.md)
+- **Folder/user setup** — required before folder-scoped resources can be used → [setup-environment.md](setup-environment.md)

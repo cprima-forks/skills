@@ -21,7 +21,7 @@ graph LR
     A[queues create] --> B[queue-items add]
     B --> C[queue-items list]
     C --> D[queue-items get]
-    D --> E[set-progress]
+    D --> E[queue-items update]
     E --> F{Outcome}
     F -->|Failed| G[get-history]
     G --> H[set-reviewer]
@@ -71,8 +71,10 @@ uip or queues get <queue-key> --output json
 # Update queue properties (cross-folder)
 uip or queues update <queue-key> --max-retries 5 --no-auto-retry --output json
 
-# Delete queue (cross-folder)
-uip or queues delete <queue-key> --output json
+# Delete queue (cross-folder). Refuses if the queue still has items;
+# pass --force to delete it and its items anyway.
+uip or queues delete <queue-key> --yes --output json
+uip or queues delete <queue-key> --force --output json
 ```
 
 ### Share a Queue Across Folders
@@ -141,6 +143,8 @@ The `bulk-add` command also takes a **queue name**. Use `--commit-type` to contr
 | `StopOnFirstFailure` | Commits items until the first failure, then stops |
 | `ProcessAllIndependently` | Processes each item independently (default) |
 
+> The bulk-add API returns only a success flag and the list of failed items -- it does **not** return the created item keys. If you need the keys (e.g. to attach data or dispatch jobs), add items one at a time with `add` (which returns the created item), or `list --queue-name` afterward.
+
 ### List and Get Items
 
 ```bash
@@ -154,21 +158,23 @@ uip or queue-items get <item-unique-key> --folder-path "Finance" --output json
 
 Filter with `--queue-name` (exact match), `--queue-definition-key` (GUID), or `--status` (New, InProgress, Failed, Successful, Abandoned, Retried, Deleted).
 
-### Update, Set Progress, Delete
+### Update and Delete
 
 ```bash
 # Update item properties (only provided fields change)
 uip or queue-items update <item-unique-key> --folder-path "Finance" \
-  --progress "Processing step 3/5" --priority High --output json
+  --priority High --output json
 
-# Set progress text (positional argument)
-uip or queue-items set-progress <item-unique-key> "Validating invoice data" \
-  --folder-path "Finance" --output json
+# Delete a single item by key
+uip or queue-items delete <item-unique-key> --folder-path "Finance" --yes --output json
 
-# Delete single / bulk
-uip or queue-items delete <item-unique-key> --folder-path "Finance" --output json
-uip or queue-items delete-bulk <key1> <key2> --folder-path "Finance" --output json
+# Delete several items in one call
+uip or queue-items delete-bulk <key1> <key2> --folder-path "Finance" --yes --output json
 ```
+
+`update` changes `--priority`, `--due-date`, `--defer-date`, and `--specific-content`. Progress is a work-in-progress message a running robot reports, so the CLI does not let you set it.
+
+`delete` (one key) and `delete-bulk` (a list of keys) are a **soft-delete**: the item's status changes to `Deleted`; it is not permanently removed.
 
 ### Get History and Retry Info
 
@@ -195,7 +201,7 @@ uip or queue-items get-reviewers --folder-path "Finance" --output json
 # Assign a reviewer to one or more items
 uip or queue-items set-reviewer <key1> <key2> \
   --folder-path "Finance" \
-  --user-id 42 \
+  --user-key <reviewer-key> \
   --output json
 ```
 
@@ -206,7 +212,7 @@ uip or queue-items set-review-status Retried <key1> <key2> \
   --folder-path "Finance" --output json
 ```
 
-Valid review statuses: `Retried`, `Abandoned`, `Deleted`. The status is the first positional argument, followed by one or more item keys.
+Valid review statuses: `None`, `InReview`, `Verified`, `Retried`. The status is the first positional argument, followed by one or more item keys.
 
 ### Remove Reviewer
 
@@ -240,7 +246,7 @@ uip or queue-items get-history <failed-item-key> \
 
 # 5. Assign reviewer and mark as reviewed
 uip or queue-items set-reviewer <failed-item-key> \
-  --folder-path "Finance" --user-id 42 --output json
+  --folder-path "Finance" --user-key <reviewer-key> --output json
 uip or queue-items set-review-status Retried <failed-item-key> \
   --folder-path "Finance" --output json
 ```
@@ -280,7 +286,7 @@ None --> InReview (reviewer assigned) --> Verified | Retried
 
 | Field | Scope | Use with |
 |-------|-------|----------|
-| `uniqueKey` | Unique per attempt | `get`, `update`, `delete`, `set-progress`, `get-history`, `has-video` |
+| `uniqueKey` | Unique per attempt | `get`, `update`, `delete`, `get-history`, `has-video` |
 | `key` | Shared across retries | `get-last-retry` |
 | Queue definition key | Queue identifier | `list --queue-definition-key`, `queues get` |
 
@@ -289,7 +295,7 @@ None --> InReview (reviewer assigned) --> Verified | Retried
 - `--specific-content` must be **flat key-value JSON** -- no nested objects or arrays.
 - All `queue-items` commands require `--folder-path` or `--folder-key` (items are folder-scoped).
 - `set-review-status` takes the **status first**, then the item key(s) -- not the other way around.
-- `set-reviewer` requires `--user-id` (numeric ID, not GUID). Use `get-reviewers` to find valid IDs.
+- `set-reviewer` requires `--user-key` (GUID, not a numeric ID). Use `get-reviewers` to find reviewer keys.
 - Queue `get`, `update`, and `delete` are **cross-folder** (no `--folder-path` needed). Queue item commands are **not**.
 - `--auto-retry` is enabled by default. Use `--no-auto-retry` to disable.
 
@@ -297,6 +303,6 @@ None --> InReview (reviewer assigned) --> Verified | Retried
 
 ## Related
 
-- [resources.md](resources.md) -- Resource tool overview and libraries
+- [resources.md](resources.md) -- Orchestrator resources overview and libraries
 - [Triggers & Webhooks](triggers-and-webhooks.md) -- Queue triggers fire automations when item count exceeds a threshold
-- [Setup Environment](../orchestrator/setup-environment.md) -- Folder and machine setup
+- [Setup Environment](setup-environment.md) -- Folder and machine setup

@@ -81,7 +81,10 @@ uip or buckets list --all-folders --name "invoice" --output json
 uip or buckets get <bucket-key> --folder-path "Finance" --output json
 uip or buckets update <bucket-key> --folder-path "Finance" \
   --name "invoices-2026" --description "Updated invoice store" --output json
-uip or buckets delete <bucket-key> --folder-path "Finance" --output json
+uip or buckets delete <bucket-key> --folder-path "Finance" --yes --output json
+# A bucket that still has files is refused; pass --force to delete it and
+# its files anyway.
+uip or buckets delete <bucket-key> --folder-path "Finance" --force --output json
 ```
 
 ### Share Buckets Across Folders
@@ -253,6 +256,6 @@ uip or bucket-files get-download-url <bucket-key> "2026/04/expenses.pdf" \
 
 ## Related
 
-- [resources.md](resources.md) — Resource tool overview and libraries
-- Credential stores used by external storage providers → [`uipath-orchestrator`](../orchestrator/tenant-admin.md)
-- Folder setup → [`uipath-orchestrator`](../orchestrator/setup-environment.md)
+- [resources.md](resources.md) — Orchestrator resources overview and libraries
+- Credential stores used by external storage providers → [`uipath-orchestrator`](tenant-admin.md)
+- Folder setup → [`uipath-orchestrator`](setup-environment.md)

@@ -14,7 +14,7 @@ Automate job execution with time, queue, and API triggers, and set up webhooks f
 ## Prerequisites
 
 - Authenticated (`uip login`)
-- Target folder exists with machines assigned (see [setup-environment.md](../orchestrator/setup-environment.md))
+- Target folder exists with machines assigned (see [setup-environment.md](setup-environment.md))
 - Process (release) created -- you need the release key from `uip or processes list`
 
 ---
@@ -132,6 +132,8 @@ uip or triggers update <trigger-key> --type time \
 
 > **`--type` matters on get/update/delete.** Default is `time`. If you pass an api or queue trigger key without `--type api` / `--type queue`, the command hits ProcessSchedules and returns `HTTP 404: ProcessSchedule does not exist.` The error instructions surface a hint pointing at the right `--type` — re-run with the correct one. (`triggers list` shows the type per entry.)
 
+> **`--type` filters the list.** `triggers list --type time` returns only time triggers, `--type queue` only queue triggers (both live in ProcessSchedules, so the CLI discriminates by queue binding). The curated output carries a canonical `Type` field with one of `Time`, `Queue`, or `Api` across `create`/`get`/`list` (use `--all-fields` for the raw entity, where api triggers report `Http`). `get` also returns `StartProcessCronSummary` (a human-readable cron, e.g. "At 12:00 PM").
+
 > **Enum flag values are case-insensitive.** `--method POST`, `--runtime-type SERVERLESS`, `--job-priority HIGH` all work and are normalized to canonical PascalCase before the API call. Same on `queue-items` (`--priority high` ≡ `High`) and `processes edit` (`--retention-action delete`, `--robot-size standard`).
 
 ---
@@ -146,7 +148,7 @@ trigger types (time, queue, api).
 ```bash
 uip or triggers update <trigger-key> --type time --folder-path "Finance" --disabled --output json
 uip or triggers update <trigger-key> --type time --folder-path "Finance" --enabled --output json
-uip or triggers delete <trigger-key> --type time --folder-path "Finance" --output json
+uip or triggers delete <trigger-key> --type time --folder-path "Finance" --yes --output json
 ```
 
 ---
@@ -211,7 +213,7 @@ uip or webhooks update <webhook-key> --disabled --output json
 uip or webhooks update <webhook-key> --enabled --output json
 
 uip or webhooks ping <webhook-key> --output json     # test connectivity
-uip or webhooks delete <webhook-key> --output json
+uip or webhooks delete <webhook-key> --yes --output json
 ```
 
 ---
@@ -271,7 +273,7 @@ uip or webhooks list --enabled --output json
 
 ## Related
 
-- [resources.md](resources.md) — Resource tool overview and common flags
-- Get the release key for `--release-key` → [`uipath-orchestrator`](../orchestrator/run-jobs.md)
-- Calendar management + tenant settings affecting trigger behavior → [`uipath-orchestrator`](../orchestrator/tenant-admin.md)
+- [resources.md](resources.md) — Orchestrator resources overview and common flags
+- Get the release key for `--release-key` → [`uipath-orchestrator`](run-jobs.md)
+- Calendar management + tenant settings affecting trigger behavior → [`uipath-orchestrator`](tenant-admin.md)
 - [process-queues.md](process-queues.md) -- Queue setup required before creating queue triggers
