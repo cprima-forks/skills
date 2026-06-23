@@ -28,10 +28,15 @@ Failures can originate at any layer — scope/context (step 1), file path or ima
 
 Key properties: `ImagePath` ("Picture to insert" — fully-qualified absolute path or an exact relative path string), `InsertRelativeTo` ("Insert relative to" — `Text` / `Bookmark` / `Document`), the corresponding anchor (`Text` string, `BookmarkName`, or `Position` = `Start`/`End`), and sizing options (`Width` / `Height`).
 
+## Replace Text in Document
+
+`Replace Text in Document` finds a `Search` string in the document opened by the surrounding scope and substitutes `Replace`. Classic `WordReplaceText` runs inside `Word Application Scope` (Interop); modern `ReplaceTextInDocument` runs inside `Use Word File`. They share a display name but run different code paths — treat them as distinct. Classic versions cap `Search`/`Replace` at 256 characters. A failure here is distinct from a scope-level fault: the scope opened fine; the failure is in the substitution (an exception, or a silent success with the document unchanged).
+
 ## Key Activities
 
 - **Word Application Scope** (`WordApplicationScope`, display name "Word Application Scope") — open a Word document via Interop and run child activities against it. **COM-only** — requires desktop Word. Properties include the document `Path`, `CreateIfNotExists` (generate the file when absent), and `Password`.
 - **Add Picture** (`WordAddImage`, display name "Add Picture") — insert an image into the document opened by the parent scope; see the `Add Picture` execution model above.
+- **Replace Text in Document** (modern `ReplaceTextInDocument` inside `Use Word File`, classic `WordReplaceText` inside `Word Application Scope`) — find a `Search` string and substitute `Replace`. Classic versions cap `Search`/`Replace` at 256 characters.
 
 ## Common Failure Patterns
 
@@ -43,6 +48,8 @@ Key properties: `ImagePath` ("Picture to insert" — fully-qualified absolute pa
 - **Add Picture — activity outside a Word scope** — `Add Picture` is placed standalone, or in a sequence not nested inside a `Use Word File` / `Word Application Scope`. It faults immediately or shows a design-time validation error. `Add Picture` has no document handle of its own — it only operates on the document its parent scope opened. This is a configuration/structure error, not a runtime COM fault.
 - **Add Picture — insertion target not found** — `Insert relative to` is set to `Text` or `Bookmark`, but the anchor does not exist in the open document. Causes: the `Text` anchor string does not match the document exactly (case-sensitive), the named bookmark does not exist in that document, or the anchor was present in a template but not the actual document instance opened at runtime.
 - **Add Picture — invalid path or unusable image** — `Add Picture` faults with a file-not-found error or a generic exception while reading the image. Causes: a relative `Picture to insert` path that does not resolve under the robot's working directory, a missing/moved file, or an in-memory `UiPath.Core.Image` variable fed into the field instead of a path string. `Add Picture` expects a fully-qualified absolute path (or an exact relative path) to an image file on disk.
+- **Replace Text — placeholder not replaced (silent)** — no exception, but the placeholder is unchanged because Word split it across internal XML runs (the token was edited/backspaced/reformatted in place), so the exact-string search never matches the contiguous term. Trace the output document content, not just the absence of an exception.
+- **Replace Text — input string length limit** — classic versions enforce a hard 256-character cap on `Search`/`Replace`; longer values raise `ArgumentException` or truncate silently. Relaxed in current package versions.
 
 ## Package
 
