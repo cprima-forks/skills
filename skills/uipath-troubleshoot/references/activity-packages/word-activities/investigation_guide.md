@@ -4,7 +4,7 @@
 
 Before using any fetched data, verify it matches the user's reported problem:
 
-- **Activity** — the faulted activity's namespace and class match the reported failure (`UiPath.Word.Activities.WordApplicationScope`, `UiPath.Word.Activities.WordReplaceText` / `ReplaceTextInDocument`). Classic `Word Application Scope` (Interop) and the modern `Use Word File` surface share intent but run different code paths — treat them as different. A `Replace Text in Document` fault is distinct from a scope-level fault: the scope opened fine and the failure is in the substitution.
+- **Activity** — the faulted activity's namespace and class match the reported failure (`UiPath.Word.Activities.WordApplicationScope`, `UiPath.Word.Activities.WordReplaceText` / `ReplaceTextInDocument`, and `Read Text`). Classic `Word Application Scope` (Interop) and the modern `Use Word File` surface share intent but run different code paths — treat them as different. For `Read Text`, also distinguish the **Word-pack** activity (needs a container) from the **standalone** `System > File > Word Document` `Read Text` (takes a file path, `.docx`-only) — they fail for different reasons. A substitution/extraction fault is distinct from a scope-level fault: the scope opened fine and the failure is in the activity.
 - **Document** — the document path in evidence matches the file the user is asking about. A scope pointed at a different document is unrelated data.
 - **Robot / machine identity** — the robot account and the machine where Word is installed match the one the user reports. Word installation, bitness, activation state, and Trust Center settings are per-user-per-machine, so evidence from a different host is not transferable.
 - **Office version and bitness** — the Word/Office version and bitness installed on the robot machine match what the user reports. Bitness mismatch with the robot process is a known COM-interop cause; multiple Office installs produce dispatcher ambiguity.
@@ -38,3 +38,9 @@ When testing hypotheses for `Replace Text in Document` issues:
 1. **Activity surface** — classic `WordReplaceText` (inside `Word Application Scope`) vs modern `ReplaceTextInDocument` (inside `Use Word File`). The 256-char limit is a classic-version constraint.
 2. **Search / Replace values** — the literal expressions and their .NET string lengths at run time; confirm an exact character-for-character match against the on-screen placeholder for a silent miss, and check >256 chars for the length-limit hypothesis.
 3. **Throw vs no-op** — whether the activity raised an exception (COM busy, file lock, ArgumentException) or completed with the document unchanged (run-split placeholder). A clean run with no substitution points at the template, not an exception path.
+
+When testing hypotheses for `Read Text` issues:
+
+1. **Which Read Text surface** — Word-pack `Read Text` (requires a `Use Word File` / `Word Application Scope` container) vs standalone `System > File > Word Document` `Read Text` (own file path, `.docx`-only). The container vs format failures are surface-specific.
+2. **Container placement** — whether the Word-pack `Read Text` is nested inside a scope; a design-time validation warning / runtime invalid-context fault points at missing-container.
+3. **File format + origin** — for the standalone activity, whether the input is legacy `.doc` (unsupported, `.docx`-only) and whether the file came from email/internet/external share (Mark-of-the-Web → Protected View block).
