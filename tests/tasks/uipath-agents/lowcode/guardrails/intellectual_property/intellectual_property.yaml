@@ -1,17 +1,17 @@
-task_id: skill-agent-guardrail-pii-detection
+task_id: skill-agent-guardrail-intellectual-property
 description: >
-  Built-in PII detection guardrail. End-to-end test: scaffold a
-  standalone low-code agent and add a builtInValidator guardrail for
-  pii_detection that blocks Email and PhoneNumber entities. Verifies
-  correct $guardrailType, validatorType, $parameterType discriminators,
-  PascalCase entity names, enum-list and map-enum parameter types, and
-  PascalCase scope values.
+  Intellectual property guardrail (low-code, builtInValidator). End-to-end
+  test: scaffold a standalone low-code agent and add a builtInValidator
+  guardrail for intellectual_property that blocks copyrighted text and
+  licensed code in the LLM output. Verifies the agent uses the enum-list
+  ipEntities parameter with PascalCase values (Text, Code), restricts scopes
+  to Llm/Agent (NOT Tool — anti-pattern 4), and a block action.
 tags: [uipath-agents, e2e, mode:build, lifecycle:generate, low-code, guardrail]
 initial_prompt: |
-  Create a UiPath low-code agent "PiiSafeAgent" that answers user questions about
-  their accounts. Add a guardrail that blocks email addresses and phone numbers
-  in the agent's output — use a 0.5 threshold for each — with the message "PII
-  detected in output." The solution should be named "PiiGuardSol".
+  Create a UiPath low-code agent "IPAgent" that drafts content for users. Add a
+  guardrail that detects copyrighted text and licensed source code in the
+  agent's LLM output and blocks it with the message "Protected material
+  detected." The solution should be named "IPSol".
 
   Do NOT publish, upload, or deploy. Do NOT ask for approval,
   confirmation, or feedback. Do NOT pause between planning and
@@ -38,7 +38,7 @@ success_criteria:
   # `uip solution project add` both populate Projects[] in the .uipx).
   - type: json_check
     description: "Project is registered in the parent solution .uipx"
-    path: "PiiGuardSol/PiiGuardSol.uipx"
+    path: "IPSol/IPSol.uipx"
     assertions:
       - expression: "length(Projects)"
         operator: "gte"
@@ -71,15 +71,15 @@ success_criteria:
     pass_threshold: 0.0
 
   - type: file_exists
-    description: "PiiSafeAgent/agent.json was created"
-    path: "PiiGuardSol/PiiSafeAgent/agent.json"
+    description: "IPAgent/agent.json was created"
+    path: "IPSol/IPAgent/agent.json"
     weight: 1.5
     pass_threshold: 1.0
 
 
   - type: run_command
-    description: "PII detection guardrail shape (builtInValidator, pii_detection, parameters, PascalCase)"
-    command: "python3 $TASK_DIR/check_pii_detection.py"
+    description: "IP guardrail shape (ipEntities enum-list, Llm/Agent scope not Tool, block action)"
+    command: "python3 $TASK_DIR/check_intellectual_property.py"
     timeout: 30
     expected_exit_code: 0
     weight: 5.0
