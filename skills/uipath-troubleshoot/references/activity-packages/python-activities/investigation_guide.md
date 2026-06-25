@@ -25,6 +25,7 @@ When testing hypotheses for `Python Scope` failures, gather and verify these bef
 5. **Interpreter bitness / version** — the actual install's bitness (x86 / x64) and version vs the scope's `Target` / `Version`. Run-surface dependent: a per-user install under the developer's profile may not exist for the robot user.
 6. **Run surface** — foreground Studio Run/Debug vs attended vs unattended / Session 0. Confirms or eliminates the `WorkingFolder` CWD-divergence cause and per-user-interpreter visibility.
 7. **Package + .NET runtime version** — `UiPath.Python.Activities` version from `project.json` and the installed .NET Desktop Runtime, checked against the pack's supported matrix.
+8. **Load vs invoke isolation** — confirm whether the failure is at load (`Load Python Script` — engine init or script import; the scope/script never bound) or at invocation (`Invoke Python Method` — the script loaded and the failure is in the called function). They have different root causes and fixes; an engine-init / load fault surfacing under an invoke routes to [load-script-failures.md](./playbooks/load-script-failures.md).
 
 ### Out-of-band confirmation
 
