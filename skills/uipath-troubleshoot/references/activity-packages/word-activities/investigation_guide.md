@@ -4,7 +4,7 @@
 
 Before using any fetched data, verify it matches the user's reported problem:
 
-- **Activity** — the faulted activity's namespace and class match the reported failure (`UiPath.Word.Activities.WordApplicationScope`, `UiPath.Word.Activities.WordReplaceText` / `ReplaceTextInDocument`, and `Read Text`). Classic `Word Application Scope` (Interop) and the modern `Use Word File` surface share intent but run different code paths — treat them as different. For `Read Text`, also distinguish the **Word-pack** activity (needs a container) from the **standalone** `System > File > Word Document` `Read Text` (takes a file path, `.docx`-only) — they fail for different reasons. A substitution/extraction fault is distinct from a scope-level fault: the scope opened fine and the failure is in the activity.
+- **Activity** — the faulted activity's namespace and class match the reported failure (`UiPath.Word.Activities.WordApplicationScope`, `UiPath.Word.Activities.WordReplaceText` / `ReplaceTextInDocument`, and `Read Text`). Classic `Word Application Scope` (Interop) and the modern `Use Word File` surface share intent but run different code paths — treat them as different. For `Read Text`, also distinguish the **Word-pack** activity (needs a container) from the **standalone** `System > File > Word Document` `Read Text` (takes a file path, `.docx`-only) — they fail for different reasons. A substitution/extraction fault is distinct from a scope-level fault: the scope opened fine and the failure is in the activity. `Export to PDF` (`WordExportToPdf`) faults are about the **output** (missing directory, malformed path) or **COM** (orphaned WINWORD), not the document content.
 - **Document** — the document path in evidence matches the file the user is asking about. A scope pointed at a different document is unrelated data.
 - **Robot / machine identity** — the robot account and the machine where Word is installed match the one the user reports. Word installation, bitness, activation state, and Trust Center settings are per-user-per-machine, so evidence from a different host is not transferable.
 - **Office version and bitness** — the Word/Office version and bitness installed on the robot machine match what the user reports. Bitness mismatch with the robot process is a known COM-interop cause; multiple Office installs produce dispatcher ambiguity.
@@ -44,3 +44,10 @@ When testing hypotheses for `Read Text` issues:
 1. **Which Read Text surface** — Word-pack `Read Text` (requires a `Use Word File` / `Word Application Scope` container) vs standalone `System > File > Word Document` `Read Text` (own file path, `.docx`-only). The container vs format failures are surface-specific.
 2. **Container placement** — whether the Word-pack `Read Text` is nested inside a scope; a design-time validation warning / runtime invalid-context fault points at missing-container.
 3. **File format + origin** — for the standalone activity, whether the input is legacy `.doc` (unsupported, `.docx`-only) and whether the file came from email/internet/external share (Mark-of-the-Web → Protected View block).
+
+When testing hypotheses for `Export to PDF` (`WordExportToPdf`) issues:
+
+1. **Output path** — capture the literal output File Path. Does the **parent folder exist** on the host (missing folder → generic `Command Failed`)? Does it end in `.pdf` with one clean separator and no empty variable segments (malformed path → save failure)?
+2. **Generic `Command Failed` carries no detail** — disambiguate by checking folder existence and path format before assuming COM.
+3. **COM state** — for a hang/crash/`COMException`, check for orphaned `WINWORD.EXE` and whether the input document is locked/open elsewhere.
+4. **Package vs Studio version** — for a `TargetInvocationException`, compare `UiPath.Word.Activities` against the Studio version (same as the Replace Text version-mismatch case).

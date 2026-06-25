@@ -36,12 +36,17 @@ Key properties: `ImagePath` ("Picture to insert" — fully-qualified absolute pa
 
 `Read Text` extracts the document's text. Two distinct surfaces fail for different reasons: the **Word-pack** `Read Text` reads the document held open by a surrounding `Use Word File` / `Word Application Scope` (it has no file input of its own); the **standalone** `Read Text` under `System > File > Word Document` takes a file path directly (no container) but is OpenXML `.docx`-only.
 
+## Export to PDF
+
+`Export to PDF` (`WordExportToPdf`, also "Save Document as PDF") exports the open document to a PDF at a target path, via Word Interop inside a `Word Application Scope`. It does **not** auto-create the output directory. Faults are about the **output** (missing target folder, malformed path) or **COM** (orphaned `WINWORD.EXE` / locked input), not the document content.
+
 ## Key Activities
 
 - **Word Application Scope** (`WordApplicationScope`, display name "Word Application Scope") — open a Word document via Interop and run child activities against it. **COM-only** — requires desktop Word. Properties include the document `Path`, `CreateIfNotExists` (generate the file when absent), and `Password`.
 - **Add Picture** (`WordAddImage`, display name "Add Picture") — insert an image into the document opened by the parent scope; see the `Add Picture` execution model above.
 - **Replace Text in Document** (modern `ReplaceTextInDocument` inside `Use Word File`, classic `WordReplaceText` inside `Word Application Scope`) — find a `Search` string and substitute `Replace`. Classic versions cap `Search`/`Replace` at 256 characters.
 - **Read Text** (display name "Read Text") — extract the document's text. Word-pack `Read Text` reads the document held open by a surrounding `Use Word File` / `Word Application Scope` (no file input of its own); the standalone `System > File > Word Document` `Read Text` takes a file path directly but is OpenXML `.docx`-only.
+- **Export to PDF** (`WordExportToPdf`, display name "Export to PDF" / "Save Document as PDF") — export the open document to a PDF at a target path, via Interop inside a `Word Application Scope`. Does **not** auto-create the output directory.
 
 ## Common Failure Patterns
 
@@ -58,6 +63,9 @@ Key properties: `ImagePath` ("Picture to insert" — fully-qualified absolute pa
 - **Read Text — activity outside its container** — the modern Word-pack `Read Text` warns at design time / faults at runtime as invalid because it has no file input of its own and was dropped outside a `Use Word File` / `Word Application Scope`. Fix: nest it in a container, or use the standalone `System > File > Word Document` `Read Text` (takes a file path).
 - **Read Text — standalone System Read Text fails on .doc** — the `System > File > Word Document` `Read Text` is OpenXML `.docx`-only and errors / returns nothing on legacy binary `.doc`. Fix: read `.doc` through a `Use Word File` (Interop reads both formats), or convert to `.docx` first.
 - **Read Text — Protected View blocks an externally-sourced file** — reading a file from email / internet / external share faults or hangs because Word opens it in Protected View (Mark-of-the-Web). Fix: unblock the file, add the folder to Trusted Locations, or disable Protected View on the host.
+- **Export to PDF — "Command Failed" (output directory missing)** — `Export to PDF` faults with a generic `Command Failed` because the target folder doesn't exist; the activity won't auto-create it. Fix: `Create Folder` before the export.
+- **Export to PDF — malformed output path / missing `.pdf`** — the File Path is built from unformatted concatenation (no `.pdf` suffix, missing/doubled separator, empty variable segment). Fix: `Path.Combine(folder, name & ".pdf")` and validate the pieces.
+- **Export to PDF — COM interop hang / crash / `COMException`** — an orphaned `WINWORD.EXE` or a locked input document blocks the export's COM call. Fix: Kill Process WINWORD before the scope, ensure the input is free; persistent → an Invoke Code C# `ExportAsFixedFormat` fallback.
 
 ## Package
 
